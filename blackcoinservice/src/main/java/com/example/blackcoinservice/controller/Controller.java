@@ -49,31 +49,32 @@ public class Controller {
         if (blockService.getBlackBlocks().size()>blockId) {
             return new ResponseEntity<>("already mined block", HttpStatus.BAD_REQUEST);
         }
-        BlackBlock blackBlockOnChain = blockService.getBlackBlocks().stream().filter(block -> block.getBlockId() == blockId).findFirst().orElse(null);
+//        BlackBlock blackBlockOnChain = blockService.getBlackBlocks().stream().filter(block -> block.getBlockId() == blockId).findFirst().orElse(null);
+        BlackBlock blackBlockOnChain = blockService.getBlackBlocks().peek();
         if (blackBlockOnChain==null) {
             return new ResponseEntity<>("block not found", HttpStatus.BAD_REQUEST);
         }
-        BlackBlock blackBlock = blackBlockOnChain.clone();
-        if (blackBlock.getNonce()>0 || !blackBlock.getHash().equalsIgnoreCase("")) {
+        if (blackBlockOnChain.getBlockId()!=mineRequest.getBlockId()) {
+            return new ResponseEntity<>("block id miss match", HttpStatus.BAD_REQUEST);
+        }
+        if (blackBlockOnChain.getNonce()>0 || !blackBlockOnChain.getHash().equalsIgnoreCase("")) {
             return new ResponseEntity<>("nonce already added", HttpStatus.BAD_REQUEST);
         }
+        // if all check passes, make clone
+        BlackBlock blackBlockClone = blackBlockOnChain.clone();
         // validate public address
         if (!keyUtility.isValidPublicKey(mineRequest.getMinerPublicAddress())) {
             return new ResponseEntity<>("invalid public key", HttpStatus.BAD_REQUEST);
         }
         //validate nonce
-        blackBlock.setNonce(mineRequest.getNonce());
-        String minedHash = hashUtility.calculateHash(blackBlock);
+        blackBlockClone.setNonce(mineRequest.getNonce());
+        String minedHash = hashUtility.calculateHash(blackBlockClone);
 
         if (!minedHash.startsWith("000")) {
             return new ResponseEntity<>("Mine challenge failed", HttpStatus.BAD_REQUEST);
         }
-        blackBlock.setHash(minedHash);
-//        blockService.getBlackBlocks().pop();
-//        blockService.getBlackBlocks().push(blackBlock);
         blockService.getBlackBlocks().peek().setNonce(mineRequest.getNonce());
         blockService.getBlackBlocks().peek().setHash(minedHash);
-
 
         blockService.addNewBlockAfterMining(mineRequest.getMinerPublicAddress());
         return new ResponseEntity<>("Mined", HttpStatus.OK);
@@ -93,7 +94,9 @@ public class Controller {
                         balance=balance+Double.parseDouble(transaction.getAmount());
                     }
                 }
-            } else if (block.getBlockId()==blockService.getBlackBlocks().size()) {
+            } else
+                // double-checking if it's the last block.
+                if (block.getBlockId()==blockService.getBlackBlocks().size() && block.getBlockId()==blockService.getBlackBlocks().peek().getBlockId()) {
                 for (Transaction transaction : block.getTransactions()) {
                     if (transaction.getFrom().equalsIgnoreCase(publicKey)) {
                         balance=balance-Double.parseDouble(transaction.getAmount());
@@ -111,25 +114,35 @@ public class Controller {
         if (!keyUtility.isValidPublicKey(transactionRequest.getFrom()) || !keyUtility.isValidPublicKey(transactionRequest.getTo())) {
             return new ResponseEntity<>("Invalid public key", HttpStatus.BAD_REQUEST);
         }
+        if (transactionRequest.getFrom().equalsIgnoreCase(transactionRequest.getTo())) {
+            return new ResponseEntity<>("From and To cannot be same", HttpStatus.BAD_REQUEST);
+        }
         // validate and format amount
         if (!amountUtility.validateAmount(transactionRequest.getAmount())) {
             return new ResponseEntity<>("Invalid amount", HttpStatus.BAD_REQUEST);
         }
 
-        if (transactionRequest.getFrom().equalsIgnoreCase(transactionRequest.getTo())) {
-            return new ResponseEntity<>("From and To cannot be same", HttpStatus.BAD_REQUEST);
-        }
         String adjustedAmount = amountUtility.formatAmount(transactionRequest.getAmount());
-
-//        List<Transaction> transactions = blockService.getBlackBlocks().stream().flatMap(block->block.getTransactions().stream()).collect(Collectors.toList());
 
         double balance = checkBalance(transactionRequest.getFrom());
 
         if (balance<=Double.parseDouble(adjustedAmount)) {
             return new ResponseEntity<>("Insufficient balance", HttpStatus.BAD_REQUEST);
         }
+        // create transaction object
+        Transaction transaction = new Transaction();
+        transaction.setFrom(transactionRequest.getFrom());
+        transaction.setTo(transactionRequest.getTo());
+        transaction.setAmount(adjustedAmount);
+        transaction.setSignature(transactionRequest.getSignature());
 
-        return ResponseEntity.ok().build();
+        try {
+            blockService.addTransaction(transaction);
+        } catch (Exception e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+
+        return new ResponseEntity<>("Transaction added", HttpStatus.CREATED);
     }
 
 }

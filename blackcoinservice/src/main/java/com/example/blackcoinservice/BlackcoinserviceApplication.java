@@ -43,7 +43,6 @@ public class BlackcoinserviceApplication {
 			blackBlock.setPreviousHash("");
 			blackBlock.setHash("");
 			blackBlock.setTimestamp(new Date().toString());
-
 			blockService.addBlock(blackBlock);
 
 			Transaction t1 = new Transaction("",

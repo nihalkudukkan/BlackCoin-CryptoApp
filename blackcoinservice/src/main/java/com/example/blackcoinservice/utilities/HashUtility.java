@@ -12,6 +12,12 @@ import java.security.MessageDigest;
 public class HashUtility {
     ObjectMapper objectMapper;
 
+    /**
+     * Calculate hash SHA-256 of given block. all the required fields must be present in the block.
+     * @param blackBlock block to be hashed
+     * @return String sha-256
+     * @throws Exception if digestion error
+     */
     public String calculateHash(BlackBlock blackBlock) throws Exception {
         String blackBlockString = objectMapper.writeValueAsString(blackBlock);
         byte[] blackBlockByte = blackBlockString.getBytes();

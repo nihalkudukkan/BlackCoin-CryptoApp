@@ -22,10 +22,9 @@ app.get('/keypair', (req, res) => {
 
 app.post("/publickeycheck", (req, res) => {
     const {publicKey} = req.body;
-    console.log(publicKey);
     
     try {
-        const keyPair = ec.keyFromPublic(publicKey, 'hex');
+        ec.keyFromPublic(publicKey, 'hex');
         res.json({
             valid: true
         });

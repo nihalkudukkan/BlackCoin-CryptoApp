@@ -15,30 +15,10 @@ import org.springframework.web.client.RestClient;
 @AllArgsConstructor
 public class TransactionService {
 
-//    private RestClient restClient;
-//    private BlockService blockService;
-
-//    public void addTransaction(Transaction transaction) {
-//        BlackBlock lastBlock = blockService.getBlackBlocks().peek();
-//        if (lastBlock.getBlockId()==1) {
-//            lastBlock.getTransactions().add(transaction);
-//            return;
-//        }
-//        if (transaction.getFrom().isEmpty()) {
-//            lastBlock.getTransactions().add(transaction);
-//            return;
-//        }
-//        boolean isValid;
-//        try {
-//            isValid = verifyTransaction(transaction);
-//        } catch (Exception e) {
-//            return;
-//        }
-//        if (isValid) {
-//            lastBlock.getTransactions().add(transaction);
-//        }
-//    }
-
+    /**
+    Verifies transaction as well as verifies public key. Returns true if valid.
+     @param transaction transaction ro be verified
+     */
     public boolean verifyTransaction(Transaction transaction) throws Exception {
 
         RestClient restClient = RestClient.builder().baseUrl("http://localhost:5000").build();

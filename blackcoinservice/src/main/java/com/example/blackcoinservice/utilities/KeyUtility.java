@@ -12,8 +12,13 @@ import org.springframework.web.client.RestClient;
 @AllArgsConstructor
 public class KeyUtility {
 
-    RestClient restClient;
+    private RestClient restClient;
 
+    /**
+     * Calls api to check validity of public key.
+     * @param publicKey EC public key
+     * @return true if valid else false
+     */
     public boolean isValidPublicKey(String publicKey) {
         if (publicKey.isBlank()) {
             return false;
