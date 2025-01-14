@@ -1,0 +1,20 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+    margin: 0;
+    padding: 0;
+}
+
+
+
+table, th, td {
+    border: 2px solid black;
+  }
+
+@layer base {
+    td {
+        padding: 5px;
+    }
+}

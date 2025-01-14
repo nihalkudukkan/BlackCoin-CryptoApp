@@ -5,7 +5,7 @@ const ec = new EC('secp256k1')
 
 const app = express();
 
-app.use(cors({ origin: false }));
+app.use(cors());
 app.use(express.json());
 
 app.get('/keypair', (req, res) => {
@@ -92,6 +92,27 @@ app.post("/mine", async(req, res) => {
         hashHex,
         nonce: c
     });
+})
+
+app.post('/login', (req, res) => {
+    const {publicKey, privateKey} = req.body;
+    try {
+    const keyPair = ec.keyFromPrivate(privateKey);
+    if (publicKey!==keyPair.getPublic(true, 'hex')) {
+        res.status(401).json({
+            error: "Invalid key"
+        })
+        return;
+    }
+    return res.json({
+        success: "Logged in"
+    })
+    } catch (error) {
+        res.status(401).json({
+            error: "Invalid key"
+        })
+        return;
+    }
 })
 
 app.listen(5000, () => {
